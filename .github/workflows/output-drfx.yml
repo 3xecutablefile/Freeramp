@@ -1,0 +1,13 @@
+name: Output DRFX
+
+on:
+  workflow_dispatch:
+  push:
+
+jobs:
+  output-drfx:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Output DRFX file
+        run: cat SpeedRampFree.drfx
