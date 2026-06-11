@@ -1,6 +1,9 @@
+import base64
 import json
 import os
+import subprocess
 import sys
+import tempfile
 
 NODE_NAME = "SpeedCurveRetime"
 POINTS_KEY = "SpeedCurvePoints"
@@ -205,6 +208,98 @@ def apply_samples(samples):
     if not item:
         raise ApplyError("No clip under the playhead.")
     return apply_to_item(item, samples)
+
+
+def get_source_path(item):
+    try:
+        props = item.GetClipProperty() or {}
+        for key in ("File Path", "File path", "file path"):
+            if key in props and props[key]:
+                return props[key]
+        if "File Name" in props:
+            return props["File Name"]
+    except Exception:
+        pass
+    return None
+
+
+def render_preview(item, samples, uid):
+    tmp = tempfile.NamedTemporaryFile(suffix=".mp4", delete=False)
+    output = tmp.name
+    tmp.close()
+
+    if not samples or len(samples) < 2:
+        raise ApplyError("No curve to preview.")
+
+    source = get_source_path(item)
+    if not source or not os.path.isfile(source):
+        raise ApplyError("Source file not found: %s" % (source or "unknown"))
+
+    try:
+        subprocess.run(["ffmpeg", "-version"], capture_output=True, check=True)
+    except (FileNotFoundError, subprocess.CalledProcessError):
+        raise ApplyError("FFmpeg not found. Install it: brew install ffmpeg")
+
+    duration = int(item.GetDuration() or 0)
+    preview_frames = min(90, max(15, duration // 4))
+
+    n = len(samples)
+    seg_frames = preview_frames / (n - 1)
+
+    parts = []
+    for i in range(n - 1):
+        avg_speed = (samples[i] + samples[i + 1]) / 2.0 / 100.0
+        avg_speed = max(0.01, avg_speed)
+        s = int(i * seg_frames)
+        e = int((i + 1) * seg_frames) if i < n - 2 else preview_frames
+        parts.append(
+            "[0:v]trim=start_frame=%d:end_frame=%d,setpts=PTS/%.2f[v%d]"
+            % (s, e, avg_speed, i)
+        )
+
+    concat_in = "".join("[v%d]" % i for i in range(n - 1))
+    parts.append("%sconcat=n=%d:v=1:a=0[v]" % (concat_in, n - 1))
+    filter_complex = ";".join(parts)
+
+    probe = subprocess.run(
+        ["ffprobe", "-v", "error", "-select_streams", "v:0",
+         "-show_entries", "stream=width,height,r_frame_rate",
+         "-of", "csv=p=0", source],
+        capture_output=True, text=True
+    )
+    dims = probe.stdout.strip().split(",") if probe.returncode == 0 else []
+    if len(dims) >= 2:
+        w, h = int(dims[0]), int(dims[1])
+        max_w = 320
+        if w > max_w:
+            h = int(h * max_w / w)
+            w = max_w
+        scale = "scale=%d:%d:flags=bicubic," % (w, h if h % 2 == 0 else h + 1)
+    else:
+        scale = ""
+
+    cmd = [
+        "ffmpeg", "-y",
+        "-i", source,
+        "-filter_complex", scale + filter_complex,
+        "-map", "[v]",
+        "-c:v", "libx264",
+        "-preset", "ultrafast",
+        "-crf", "30",
+        "-pix_fmt", "yuv420p",
+        "-an",
+        output
+    ]
+
+    result = subprocess.run(cmd, capture_output=True, text=True, timeout=60)
+    if result.returncode != 0:
+        os.unlink(output)
+        raise ApplyError("FFmpeg preview failed: %s" % result.stderr[-200:])
+
+    with open(output, "rb") as f:
+        b64 = base64.b64encode(f.read()).decode("ascii")
+    os.unlink(output)
+    return "data:video/mp4;base64," + b64
 
 
 def main():

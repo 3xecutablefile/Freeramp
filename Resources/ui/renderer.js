@@ -78,6 +78,11 @@
     applyBtn: $('#applyBtn'),
     refreshBtn: $('#refreshBtn'),
     toastContainer: $('#toastContainer'),
+    previewPanel: $('#previewPanel'),
+    previewVideo: $('#previewVideo'),
+    previewEmpty: $('#previewEmpty'),
+    genPreviewBtn: $('#genPreviewBtn'),
+    closePreviewBtn: $('#closePreviewBtn'),
   }
 
   /* ── helpers ── */
@@ -349,6 +354,7 @@
       el.clipName.textContent = 'No clip selected'
       el.clipDur.textContent = ''
       el.clipIndicator.style.background = 'var(--border)'
+      closePreview()
       draw()
       return
     }
@@ -607,6 +613,9 @@
 
     // ── timeline preview ──
     if (S.uid) updatePreview(S.uid)
+
+    // ── auto video preview ──
+    if (S.uid) debouncedAutoPreview()
   }
 
   /* ── stats ── */
@@ -854,6 +863,57 @@
     }
   }
 
+  /* ── video preview ── */
+  let previewTimer = null
+
+  async function generatePreview() {
+    if (!S.uid || !S.samples || S.samples.length < 2) {
+      setStatus('No clip or curve to preview', 'error')
+      return
+    }
+    el.previewPanel.classList.add('open')
+    el.previewPanel.querySelector('.preview-body').classList.add('loading')
+    el.previewVideo.classList.remove('ready')
+    setStatus('Generating preview…')
+    try {
+      const a = await getApi()
+      const r = await a.preview(S.uid, S.samples.slice())
+      if (r.ok) {
+        el.previewVideo.src = r.path
+        el.previewVideo.load()
+        el.previewVideo.oncanplay = function () {
+          el.previewVideo.classList.add('ready')
+          el.previewPanel.querySelector('.preview-body').classList.remove('loading')
+          el.previewVideo.play().catch(function () {})
+          setStatus('Preview ready', 'success')
+        }
+        el.previewVideo.onerror = function () {
+          el.previewPanel.querySelector('.preview-body').classList.remove('loading')
+          setStatus('Preview failed to load', 'error')
+        }
+      } else {
+        el.previewPanel.querySelector('.preview-body').classList.remove('loading')
+        setStatus(r.msg, 'error')
+        toast(r.msg, 'error')
+      }
+    } catch (e) {
+      el.previewPanel.querySelector('.preview-body').classList.remove('loading')
+      setStatus('Preview error: ' + e.message, 'error')
+    }
+  }
+
+  function closePreview() {
+    el.previewPanel.classList.remove('open')
+    el.previewVideo.classList.remove('ready')
+    el.previewVideo.pause()
+    el.previewVideo.src = ''
+  }
+
+  function debouncedAutoPreview() {
+    clearTimeout(previewTimer)
+    previewTimer = setTimeout(generatePreview, 400)
+  }
+
   /* ── resize ── */
   let resizeTimer
   function onResize() {
@@ -879,6 +939,13 @@
       S.smooth = parseInt(this.value)
       el.smoothLabel.textContent = S.smooth
     })
+
+    // preview
+    el.genPreviewBtn.addEventListener('click', function () {
+      clearTimeout(previewTimer)
+      generatePreview()
+    })
+    el.closePreviewBtn.addEventListener('click', closePreview)
 
     // canvas events
     cnv.addEventListener('mousedown', onDown)

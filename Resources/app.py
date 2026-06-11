@@ -40,7 +40,8 @@ def _log_error(msg):
 # ── imports (after path is set) ─────────────────────────────────────
 try:
     from apply_curve import (
-        ApplyError, apply_to_item, get_context, item_uid, list_video_items, read_points,
+        ApplyError, apply_to_item, get_context, item_uid, list_video_items,
+        read_points, render_preview,
     )
 except Exception as e:
     _log_error('Failed to import apply_curve: %s\n%s' % (e, traceback.format_exc()))
@@ -98,6 +99,16 @@ class Api:
                 raise ApplyError("Clip not found — hit Refresh and reselect.")
             msg = apply_to_item(item, samples, points_json)
             return {"ok": True, "msg": msg}
+        except Exception as e:
+            return _err(e)
+
+    def preview(self, uid, samples):
+        try:
+            item = self._items.get(uid)
+            if not item:
+                raise ApplyError("Clip not found — hit Refresh and reselect.")
+            path = render_preview(item, samples, uid)
+            return {"ok": True, "path": path}
         except Exception as e:
             return _err(e)
 
