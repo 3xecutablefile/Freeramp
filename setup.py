@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
-import os, sys
+import os
 from setuptools import setup
 
 HERE = os.path.dirname(os.path.abspath(__file__))
+APP_PATH = os.path.join(HERE, 'Resources', 'app.py')
 
 DATA_FILES = [
     ('ui', [
@@ -14,7 +15,8 @@ DATA_FILES = [
 OPTIONS = {
     'argv_emulation': False,
     'packages': ['webview'],
-    'site_packages': True,
+    'includes': ['apply_curve'],
+    'excludes': ['tkinter', 'PyQt5', 'PySide2', 'PySide6', 'wx'],
     'plist': {
         'CFBundleName': 'VinciRamp',
         'CFBundleDisplayName': 'VinciRamp',
@@ -25,11 +27,10 @@ OPTIONS = {
         'NSHighResolutionCapable': True,
         'NSHumanReadableCopyright': 'VinciRamp — speed curve editor for DaVinci Resolve',
     },
-    'iconfile': None,
 }
 
 setup(
-    app=['main.py'],
+    app=[APP_PATH],
     data_files=DATA_FILES,
     options={'py2app': OPTIONS},
     setup_requires=['py2app'],

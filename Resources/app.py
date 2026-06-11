@@ -1,16 +1,50 @@
+#!/usr/bin/env python3
+"""
+VinciRamp — macOS app entry point (py2app + dev).
+
+Frozen (py2app):
+  sys.executable → .../MacOS/VinciRamp
+  resources      → .../Resources/   (sys.executable/../Resources)
+  ui/            → .../Resources/ui/
+
+Dev:
+  python3 Resources/app.py
+  resources      → Resources/
+  ui/            → Resources/ui/
+"""
+
 import os
 import sys
 import traceback
 
+# ── path setup ──────────────────────────────────────────────────────
 if getattr(sys, 'frozen', False):
-    HERE = os.path.join(os.path.dirname(sys.executable), '..', 'Resources')
+    RESOURCES = os.path.join(os.path.dirname(sys.executable), '..', 'Resources')
 else:
-    HERE = os.path.dirname(os.path.abspath(__file__))
-sys.path.insert(0, HERE)
+    RESOURCES = os.path.dirname(os.path.abspath(__file__))
 
-from apply_curve import (
-    ApplyError, apply_to_item, get_context, item_uid, list_video_items, read_points,
-)
+sys.path.insert(0, RESOURCES)
+
+# ── crash logging ───────────────────────────────────────────────────
+_LOG_DIR = os.path.expanduser('~/Library/Logs/VinciRamp')
+_LOG = os.path.join(_LOG_DIR, 'crash.log')
+
+def _log_error(msg):
+    try:
+        os.makedirs(_LOG_DIR, exist_ok=True)
+        with open(_LOG, 'a') as f:
+            f.write(msg + '\n')
+    except Exception:
+        pass
+
+# ── imports (after path is set) ─────────────────────────────────────
+try:
+    from apply_curve import (
+        ApplyError, apply_to_item, get_context, item_uid, list_video_items, read_points,
+    )
+except Exception as e:
+    _log_error('Failed to import apply_curve: %s\n%s' % (e, traceback.format_exc()))
+    raise
 
 
 def _err(e):
@@ -72,23 +106,35 @@ def main():
     try:
         import webview
     except ImportError:
-        sys.stderr.write(
-            "Speed Curve needs the 'pywebview' package.\n"
+        msg = (
+            "VinciRamp needs the 'pywebview' package.\n"
             "Install it with:  pip3 install pywebview\n"
         )
+        _log_error(msg)
+        sys.stderr.write(msg)
+        sys.exit(1)
+
+    html = os.path.join(RESOURCES, 'ui', 'index.html')
+    if not os.path.isfile(html):
+        _log_error('UI file not found: %s' % html)
+        sys.stderr.write('UI not found at %s\n' % html)
         sys.exit(1)
 
     webview.create_window(
-        "Speed Curve",
-        os.path.join(HERE, "ui", "index.html"),
+        "VinciRamp",
+        html,
         js_api=Api(),
         width=820,
         height=640,
         min_size=(580, 500),
-        background_color="#1c1c20",
+        background_color="#0e0e10",
     )
     webview.start()
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except Exception as e:
+        _log_error('Unhandled exception: %s\n%s' % (e, traceback.format_exc()))
+        raise

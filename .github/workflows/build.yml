@@ -62,5 +62,8 @@ jobs:
             - Requires DaVinci Resolve Studio (for Fusion scripting)
             - Install pywebview: `pip3 install pywebview`
             - Run install.sh to auto-remove quarantine, or right-click → Open for the first manual launch
+            - If it doesn't open, run from Terminal to see errors:
+              `/Applications/VinciRamp.app/Contents/MacOS/VinciRamp`
+            - Crash logs written to: `~/Library/Logs/VinciRamp/crash.log`
           files: VinciRamp-macOS.zip
           generate_release_notes: false
