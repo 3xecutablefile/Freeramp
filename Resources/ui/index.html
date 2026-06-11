@@ -4,78 +4,247 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>VinciRamp</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
+:root {
+  --bg:#0e0e10;
+  --surface:#151518;
+  --surface2:#1c1c21;
+  --surface3:#24242b;
+  --border:#2a2a33;
+  --border-light:#3a3a45;
+  --text:#d4d4dc;
+  --text-dim:#6b6b78;
+  --text-bright:#f0f0f5;
+  --gold:#c8a45c;
+  --gold-dim:#8a6e3a;
+  --gold-glow:rgba(200,164,92,0.25);
+  --gold-glow-strong:rgba(200,164,92,0.45);
+  --green:#5bbf7a;
+  --coral:#e86a5a;
+  --teal:#5bbfbf;
+  --radius:8px;
+  --radius-sm:5px;
+  --ease-out-expo:cubic-bezier(0.19,1,0.22,1);
+  --font-sans:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  --font-mono:'JetBrains Mono','SF Mono',SFMono-Regular,monospace;
+}
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-:root{--bg:#1c1c20;--surface:#25252b;--surface2:#2e2e35;--border:#3a3a42;--text:#d4d4dc;--text-dim:#888;--accent:#5b8def;--accent-hover:#7aa3ff;--danger:#e25555;--success:#4caf7d;--radius:6px;--font:system-ui,-apple-system,Segoe UI,sans-serif}
-html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--font);font-size:13px;overflow:hidden}
-.app{display:flex;flex-direction:column;height:100vh}
-.toolbar{display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--surface);border-bottom:1px solid var(--border);flex-shrink:0}
-.toolbar h1{font-size:14px;font-weight:600;letter-spacing:-0.3px;margin-right:auto}
-.toolbar .btn{padding:5px 12px;border-radius:var(--radius);border:none;font-size:12px;cursor:pointer;background:var(--surface2);color:var(--text)}
-.toolbar .btn:hover{background:var(--border)}
-.toolbar .btn.primary{background:var(--accent);color:#fff}
-.toolbar .btn.primary:hover{background:var(--accent-hover)}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--font-sans);font-size:13px;overflow:hidden;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
+
+::selection{background:var(--gold);color:#0e0e10}
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border-light);border-radius:3px}
+::-webkit-scrollbar-thumb:hover{background:#4a4a58}
+
+.app{display:flex;flex-direction:column;height:100vh;background:radial-gradient(ellipse at 50% 0%,rgba(200,164,92,0.03) 0%,transparent 70%)}
+
+/* ─── toolbar ─── */
+.toolbar{display:flex;align-items:center;gap:8px;padding:10px 16px;background:rgba(21,21,24,0.92);backdrop-filter:blur(20px) saturate(1.4);-webkit-backdrop-filter:blur(20px) saturate(1.4);border-bottom:1px solid var(--border);flex-shrink:0;z-index:10}
+.toolbar-brand{display:flex;align-items:center;gap:10px;margin-right:auto;user-select:none}
+.toolbar-logo{width:22px;height:22px;border-radius:5px;background:linear-gradient(135deg,var(--gold),#8a6e3a);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#0e0e10}
+.toolbar-brand h1{font-size:15px;font-weight:600;letter-spacing:-0.4px;color:var(--text-bright)}
+.toolbar-brand .tag{font-size:10px;color:var(--text-dim);font-weight:400;margin-left:2px;letter-spacing:0}
+.toolbar .btn{position:relative;padding:6px 14px;border-radius:var(--radius-sm);border:none;font-family:var(--font-sans);font-size:12px;font-weight:500;cursor:pointer;transition:all .2s var(--ease-out-expo);background:var(--surface2);color:var(--text)}
+.toolbar .btn:hover{background:var(--surface3);color:var(--text-bright)}
+.toolbar .btn:active{transform:scale(0.96)}
+.toolbar .btn.primary{background:linear-gradient(135deg,var(--gold),var(--gold-dim));color:#0e0e10;font-weight:600}
+.toolbar .btn.primary:hover{box-shadow:0 0 24px var(--gold-glow);filter:brightness(1.1)}
+.toolbar .btn.icon{padding:6px 8px;font-size:16px;line-height:1}
+.toolbar .sep{width:1px;height:20px;background:var(--border);margin:0 4px}
+
+.live-badge{display:flex;align-items:center;gap:5px;padding:3px 10px;border-radius:10px;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.8px;transition:all .3s}
+.live-badge.active{background:rgba(91,191,122,0.12);color:var(--green);border:1px solid rgba(91,191,122,0.25)}
+.live-badge.inactive{background:var(--surface2);color:var(--text-dim);border:1px solid var(--border)}
+.live-dot{width:6px;height:6px;border-radius:50%;background:currentColor}
+.live-badge.active .live-dot{animation:pulse-dot 1.4s ease-in-out infinite}
+@keyframes pulse-dot{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.5;transform:scale(0.8)}}
+
+/* ─── main ─── */
 .main{display:flex;flex:1;min-height:0}
-.panel{display:flex;flex-direction:column;border-right:1px solid var(--border);width:280px;min-width:200px;resize:horizontal;overflow:hidden}
-.panel-header{padding:8px 12px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-dim);background:var(--surface);border-bottom:1px solid var(--border);flex-shrink:0}
-.panel-body{flex:1;overflow-y:auto;padding:4px 0}
-.track{margin:0 4px 2px}
-.track-label{padding:4px 8px;font-size:11px;font-weight:500;color:var(--text-dim);cursor:pointer;user-select:none}
+.panel{display:flex;flex-direction:column;width:264px;min-width:180px;max-width:400px;border-right:1px solid var(--border);background:rgba(21,21,24,0.6);flex-shrink:0;position:relative}
+.panel::after{content:'';position:absolute;right:0;top:0;bottom:0;width:2px;cursor:col-resize;z-index:5}
+.panel-header{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:var(--text-dim);background:rgba(21,21,24,0.5);border-bottom:1px solid var(--border);flex-shrink:0}
+.panel-header .count{font-weight:400;color:var(--text-dim);opacity:0.5}
+.panel-body{flex:1;overflow-y:auto;padding:6px 0}
+
+.track{margin:0 0 1px}
+.track-label{display:flex;align-items:center;gap:6px;padding:6px 14px;font-size:11px;font-weight:500;color:var(--text-dim);cursor:pointer;user-select:none;transition:color .15s}
 .track-label:hover{color:var(--text)}
-.clip{padding:5px 8px 5px 20px;cursor:pointer;font-size:12px;border-left:2px solid transparent;transition:all .12s}
+.track-label .track-num{font-family:var(--font-mono);font-size:10px;color:var(--text-dim);opacity:0.4}
+.track-label::before{content:'';width:2px;height:10px;border-radius:1px;background:var(--border);transition:background .2s}
+.track-label:hover::before{background:var(--gold-dim)}
+.track-items{padding:0 0 4px}
+.clip{position:relative;padding:6px 14px 6px 24px;cursor:pointer;font-size:12px;border-left:2px solid transparent;transition:all .15s var(--ease-out-expo);display:flex;align-items:center;gap:6px}
 .clip:hover{background:var(--surface2)}
-.clip.selected{background:var(--surface2);border-left-color:var(--accent);color:#fff}
-.clip .frames{font-size:10px;color:var(--text-dim);margin-left:6px}
-.canvas-panel{flex:1;display:flex;flex-direction:column;min-width:0}
-.curve-header{display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--surface);border-bottom:1px solid var(--border);flex-shrink:0}
-.curve-header .clip-name{font-weight:500;font-size:13px}
-.curve-header .clip-info{font-size:11px;color:var(--text-dim)}
-.curve-area{flex:1;position:relative;overflow:hidden}
+.clip:active{transform:scale(0.98)}
+.clip.selected{background:linear-gradient(90deg,rgba(200,164,92,0.08),transparent);border-left-color:var(--gold)}
+.clip.selected .clip-name{color:var(--text-bright)}
+.clip-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}
+.clip-frames{font-family:var(--font-mono);font-size:9px;color:var(--text-dim);opacity:0.6;flex-shrink:0;letter-spacing:-0.3px}
+.clip-apply-tick{font-size:9px;opacity:0;transition:opacity .3s;color:var(--green);margin-left:auto}
+.clip-apply-tick.show{opacity:1}
+
+/* ─── curve editor ─── */
+.canvas-panel{flex:1;display:flex;flex-direction:column;min-width:0;position:relative}
+.curve-header{display:flex;align-items:center;gap:14px;padding:10px 18px;background:rgba(21,21,24,0.6);backdrop-filter:blur(10px);border-bottom:1px solid var(--border);flex-shrink:0}
+.curve-header-left{display:flex;align-items:center;gap:10px;flex:1;min-width:0}
+.curve-clip-indicator{width:3px;height:24px;border-radius:2px;background:var(--gold);flex-shrink:0}
+.curve-clip-name{font-size:14px;font-weight:600;color:var(--text-bright);letter-spacing:-0.3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.curve-clip-dur{font-family:var(--font-mono);font-size:11px;color:var(--text-dim)}
+.curve-header-right{display:flex;align-items:center;gap:6px;flex-shrink:0}
+.curve-header-right .btn{padding:4px 10px;border-radius:var(--radius-sm);border:none;font-family:var(--font-sans);font-size:11px;font-weight:500;cursor:pointer;transition:all .15s;background:var(--surface2);color:var(--text)}
+.curve-header-right .btn:hover{background:var(--surface3);color:var(--text-bright)}
+.curve-header-right .btn:active{transform:scale(0.95)}
+.curve-header-right .btn.active-preset{background:rgba(200,164,92,0.15);color:var(--gold);border:1px solid rgba(200,164,92,0.3)}
+
+.curve-area{flex:1;position:relative;overflow:hidden;cursor:crosshair}
 .curve-area canvas{display:block;width:100%;height:100%}
-.curve-footer{display:flex;align-items:center;gap:8px;padding:6px 12px;background:var(--surface);border-top:1px solid var(--border);flex-shrink:0;font-size:11px;color:var(--text-dim)}
+
+.curve-footer{display:flex;align-items:center;gap:10px;padding:8px 16px;background:rgba(21,21,24,0.8);backdrop-filter:blur(10px);border-top:1px solid var(--border);flex-shrink:0;font-size:11px}
+.curve-footer .stat{display:flex;align-items:center;gap:5px}
+.curve-footer .stat-label{color:var(--text-dim);font-size:10px;text-transform:uppercase;letter-spacing:0.5px}
+.curve-footer .stat-value{font-family:var(--font-mono);font-size:12px;font-weight:500;color:var(--text-bright);min-width:28px}
 .curve-footer .spacer{flex:1}
-.status{font-size:11px;padding:6px 12px;background:var(--surface2);border-top:1px solid var(--border);min-height:28px;flex-shrink:0;color:var(--text-dim);line-height:1.4}
-.status.success{color:var(--success)}
-.status.error{color:var(--danger)}
-input[type="range"]{-webkit-appearance:none;width:100px;height:3px;background:var(--border);border-radius:2px;outline:none}
-input[type="range"]::-webkit-slider-thumb{-webkit-appearance:none;width:12px;height:12px;border-radius:50%;background:var(--accent);cursor:pointer}
-.hidden{display:none!important}
+.curve-footer .divider{width:1px;height:16px;background:var(--border)}
+
+input[type="range"]{-webkit-appearance:none;width:80px;height:3px;background:var(--border);border-radius:2px;outline:none;cursor:pointer}
+input[type="range"]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:linear-gradient(135deg,var(--gold),var(--gold-dim));cursor:pointer;box-shadow:0 0 8px var(--gold-glow);border:none;transition:transform .15s}
+input[type="range"]::-webkit-slider-thumb:hover{transform:scale(1.15)}
+input[type="range"]::-moz-range-thumb{width:14px;height:14px;border-radius:50%;background:linear-gradient(135deg,var(--gold),var(--gold-dim));cursor:pointer;border:none}
+.range-label{font-family:var(--font-mono);font-size:10px;color:var(--text-dim);min-width:18px;text-align:center}
+
+.status{display:flex;align-items:center;gap:8px;padding:7px 16px;background:rgba(21,21,24,0.95);border-top:1px solid var(--border);min-height:34px;flex-shrink:0;font-size:11px;color:var(--text-dim);transition:all .3s}
+.status.success{color:var(--green);border-top-color:rgba(91,191,122,0.2)}
+.status.error{color:var(--coral);border-top-color:rgba(232,106,90,0.2)}
+.status-info{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.status-indicator{width:5px;height:5px;border-radius:50%;flex-shrink:0}
+
+/* ─── cursor tooltip ─── */
+.cursor-readout{position:absolute;pointer-events:none;opacity:0;transition:opacity .15s;background:rgba(14,14,16,0.85);backdrop-filter:blur(12px);border:1px solid var(--border-light);border-radius:var(--radius-sm);padding:4px 8px;font-family:var(--font-mono);font-size:10px;color:var(--text-bright);z-index:20;white-space:nowrap;display:none}
+.cursor-readout.visible{opacity:1;display:block}
+
+/* ─── empty state ─── */
+.empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:12px;color:var(--text-dim);user-select:none}
+.empty-state-icon{width:48px;height:48px;border-radius:50%;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:20px;opacity:0.4}
+.empty-state-text{font-size:13px;font-weight:500}
+.empty-state-hint{font-size:11px;opacity:0.6}
+
+/* ─── keyboard hint ─── */
+.kbd{display:inline-block;padding:1px 4px;font-family:var(--font-mono);font-size:9px;background:var(--surface2);border:1px solid var(--border);border-radius:3px;color:var(--text-dim);line-height:1.4}
+
+/* ─── toast ─── */
+.toast-container{position:fixed;bottom:50px;left:50%;transform:translateX(-50%);z-index:100;pointer-events:none}
+.toast{padding:8px 18px;border-radius:var(--radius);background:rgba(14,14,16,0.9);backdrop-filter:blur(16px);border:1px solid var(--border-light);font-size:12px;color:var(--text-bright);pointer-events:auto;animation:toast-in .35s var(--ease-out-expo),toast-out .3s var(--ease-out-expo) 1.8s forwards}
+@keyframes toast-in{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+@keyframes toast-out{to{opacity:0;transform:translateY(-8px)}}
+.toast.success{border-color:rgba(91,191,122,0.3)}
+.toast.error{border-color:rgba(232,106,90,0.3)}
+.toast .toast-icon{margin-right:6px}
 </style>
 </head>
 <body>
 <div class="app">
+  <!-- toolbar -->
   <div class="toolbar">
-    <h1>VinciRamp</h1>
-    <button class="btn" id="refreshBtn">⟳ Refresh</button>
-    <button class="btn primary" id="applyBtn">Apply Ramp</button>
+    <div class="toolbar-brand">
+      <div class="toolbar-logo">V</div>
+      <h1>VinciRamp <span class="tag">α</span></h1>
+    </div>
+    <div class="live-badge inactive" id="liveBadge">
+      <span class="live-dot"></span>
+      <span>Standby</span>
+    </div>
+    <div class="sep"></div>
+    <button class="btn" id="refreshBtn">⟳ Sync</button>
+    <button class="btn icon" id="undoBtn" title="Undo (⌘Z)" disabled style="opacity:0.3">↩</button>
+    <button class="btn icon" id="redoBtn" title="Redo (⇧⌘Z)" disabled style="opacity:0.3">↪</button>
+    <div class="sep"></div>
+    <button class="btn primary" id="applyBtn">Apply</button>
   </div>
+
+  <!-- main -->
   <div class="main">
+    <!-- timeline panel -->
     <div class="panel">
-      <div class="panel-header">Timeline</div>
+      <div class="panel-header">
+        <span>Timeline</span>
+        <span class="count" id="clipCount"></span>
+      </div>
       <div class="panel-body" id="timelineBody">
-        <div style="padding:20px;text-align:center;color:var(--text-dim)">Hit Refresh to load timeline</div>
+        <div class="empty-state">
+          <div class="empty-state-icon">⊞</div>
+          <div class="empty-state-text">No timeline loaded</div>
+          <div class="empty-state-hint">Hit <span class="kbd">⌘R</span> or press Sync</div>
+        </div>
       </div>
     </div>
+
+    <!-- curve editor -->
     <div class="canvas-panel">
       <div class="curve-header">
-        <span class="clip-name" id="clipName">No clip selected</span>
-        <span class="clip-info" id="clipInfo"></span>
+        <div class="curve-header-left">
+          <div class="curve-clip-indicator" id="clipIndicator"></div>
+          <span class="curve-clip-name" id="clipName">No clip selected</span>
+          <span class="curve-clip-dur" id="clipDur"></span>
+        </div>
+        <div class="curve-header-right">
+          <button class="btn" data-preset="ramp-up">Ramp ↑</button>
+          <button class="btn" data-preset="ramp-down">Ramp ↓</button>
+          <button class="btn" data-preset="bump">Bump</button>
+          <button class="btn" data-preset="echo">Echo</button>
+          <button class="btn" data-preset="flat">Flat</button>
+        </div>
       </div>
+
       <div class="curve-area" id="curveArea">
         <canvas id="curveCanvas"></canvas>
+        <div class="cursor-readout" id="cursorReadout"></div>
       </div>
+
       <div class="curve-footer">
-        <span>Speed: <span id="speedDisplay">100%</span></span>
-        <span class="spacer"></span>
-        <span>Smoothing:</span>
-        <input type="range" id="smoothSlider" min="0" max="100" value="50">
-        <span id="smoothVal">50</span>
-        <button class="btn" id="resetCurveBtn" style="margin-left:4px;padding:2px 8px;font-size:10px">Reset</button>
+        <div class="stat">
+          <span class="stat-label">Avg</span>
+          <span class="stat-value" id="statAvg">—</span>
+        </div>
+        <div class="stat">
+          <span class="stat-label">Min</span>
+          <span class="stat-value" id="statMin">—</span>
+        </div>
+        <div class="stat">
+          <span class="stat-label">Max</span>
+          <span class="stat-value" id="statMax">—</span>
+        </div>
+        <div class="divider"></div>
+        <div class="stat">
+          <span class="stat-label">Points</span>
+          <span class="stat-value" id="statPoints">—</span>
+        </div>
+        <div class="spacer"></div>
+        <div class="stat">
+          <span class="stat-label">Smooth</span>
+        </div>
+        <input type="range" id="smoothSlider" min="0" max="100" value="30">
+        <span class="range-label" id="smoothLabel">30</span>
+        <div class="divider"></div>
+        <div class="stat">
+          <span class="stat-label">Frames</span>
+          <span class="stat-value" id="statFrames">—</span>
+        </div>
       </div>
-      <div class="status" id="statusBar">Ready</div>
+
+      <div class="status" id="statusBar">
+        <span class="status-indicator" id="statusDot" style="background:var(--text-dim)"></span>
+        <span class="status-info">Ready</span>
+      </div>
     </div>
   </div>
 </div>
+
+<div class="toast-container" id="toastContainer"></div>
+
 <script src="renderer.js"></script>
 </body>
 </html>
