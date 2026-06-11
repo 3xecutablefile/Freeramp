@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>VinciRamp</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#1c1c20;--surface:#25252b;--surface2:#2e2e35;--border:#3a3a42;--text:#d4d4dc;--text-dim:#888;--accent:#5b8def;--accent-hover:#7aa3ff;--danger:#e25555;--success:#4caf7d;--radius:6px;--font:system-ui,-apple-system,Segoe UI,sans-serif}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--font);font-size:13px;overflow:hidden}
+.app{display:flex;flex-direction:column;height:100vh}
+.toolbar{display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--surface);border-bottom:1px solid var(--border);flex-shrink:0}
+.toolbar h1{font-size:14px;font-weight:600;letter-spacing:-0.3px;margin-right:auto}
+.toolbar .btn{padding:5px 12px;border-radius:var(--radius);border:none;font-size:12px;cursor:pointer;background:var(--surface2);color:var(--text)}
+.toolbar .btn:hover{background:var(--border)}
+.toolbar .btn.primary{background:var(--accent);color:#fff}
+.toolbar .btn.primary:hover{background:var(--accent-hover)}
+.main{display:flex;flex:1;min-height:0}
+.panel{display:flex;flex-direction:column;border-right:1px solid var(--border);width:280px;min-width:200px;resize:horizontal;overflow:hidden}
+.panel-header{padding:8px 12px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-dim);background:var(--surface);border-bottom:1px solid var(--border);flex-shrink:0}
+.panel-body{flex:1;overflow-y:auto;padding:4px 0}
+.track{margin:0 4px 2px}
+.track-label{padding:4px 8px;font-size:11px;font-weight:500;color:var(--text-dim);cursor:pointer;user-select:none}
+.track-label:hover{color:var(--text)}
+.clip{padding:5px 8px 5px 20px;cursor:pointer;font-size:12px;border-left:2px solid transparent;transition:all .12s}
+.clip:hover{background:var(--surface2)}
+.clip.selected{background:var(--surface2);border-left-color:var(--accent);color:#fff}
+.clip .frames{font-size:10px;color:var(--text-dim);margin-left:6px}
+.canvas-panel{flex:1;display:flex;flex-direction:column;min-width:0}
+.curve-header{display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--surface);border-bottom:1px solid var(--border);flex-shrink:0}
+.curve-header .clip-name{font-weight:500;font-size:13px}
+.curve-header .clip-info{font-size:11px;color:var(--text-dim)}
+.curve-area{flex:1;position:relative;overflow:hidden}
+.curve-area canvas{display:block;width:100%;height:100%}
+.curve-footer{display:flex;align-items:center;gap:8px;padding:6px 12px;background:var(--surface);border-top:1px solid var(--border);flex-shrink:0;font-size:11px;color:var(--text-dim)}
+.curve-footer .spacer{flex:1}
+.status{font-size:11px;padding:6px 12px;background:var(--surface2);border-top:1px solid var(--border);min-height:28px;flex-shrink:0;color:var(--text-dim);line-height:1.4}
+.status.success{color:var(--success)}
+.status.error{color:var(--danger)}
+input[type="range"]{-webkit-appearance:none;width:100px;height:3px;background:var(--border);border-radius:2px;outline:none}
+input[type="range"]::-webkit-slider-thumb{-webkit-appearance:none;width:12px;height:12px;border-radius:50%;background:var(--accent);cursor:pointer}
+.hidden{display:none!important}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="toolbar">
+    <h1>VinciRamp</h1>
+    <button class="btn" id="refreshBtn">⟳ Refresh</button>
+    <button class="btn primary" id="applyBtn">Apply Ramp</button>
+  </div>
+  <div class="main">
+    <div class="panel">
+      <div class="panel-header">Timeline</div>
+      <div class="panel-body" id="timelineBody">
+        <div style="padding:20px;text-align:center;color:var(--text-dim)">Hit Refresh to load timeline</div>
+      </div>
+    </div>
+    <div class="canvas-panel">
+      <div class="curve-header">
+        <span class="clip-name" id="clipName">No clip selected</span>
+        <span class="clip-info" id="clipInfo"></span>
+      </div>
+      <div class="curve-area" id="curveArea">
+        <canvas id="curveCanvas"></canvas>
+      </div>
+      <div class="curve-footer">
+        <span>Speed: <span id="speedDisplay">100%</span></span>
+        <span class="spacer"></span>
+        <span>Smoothing:</span>
+        <input type="range" id="smoothSlider" min="0" max="100" value="50">
+        <span id="smoothVal">50</span>
+        <button class="btn" id="resetCurveBtn" style="margin-left:4px;padding:2px 8px;font-size:10px">Reset</button>
+      </div>
+      <div class="status" id="statusBar">Ready</div>
+    </div>
+  </div>
+</div>
+<script src="renderer.js"></script>
+</body>
+</html>

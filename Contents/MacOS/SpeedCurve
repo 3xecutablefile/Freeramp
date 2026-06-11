@@ -1,0 +1,43 @@
+#!/bin/bash
+# Speed Curve.app launcher
+# Finds a python3 that has pywebview — checks pyenv, homebrew, PATH, system.
+
+RES="$(cd "$(dirname "$0")/../Resources" && pwd)"
+
+for rc in "$HOME/.zshrc" "$HOME/.bash_profile" "$HOME/.bashrc" "$HOME/.profile"; do
+  [ -f "$rc" && source "$rc" 2>/dev/null && break
+done
+
+if command -v pyenv >/dev/null 2>&1; then
+  eval "$(pyenv init -)" 2>/dev/null
+  eval "$(pyenv init --path)" 2>/dev/null
+fi
+
+CANDIDATES=(
+  "$(pyenv which python3 2>/dev/null)"
+  "$(command -v python3 2>/dev/null)"
+  "$HOME/.pyenv/shims/python3"
+  "$HOME/.pyenv/versions/$(pyenv version-name 2>/dev/null)/bin/python3"
+  /opt/homebrew/bin/python3
+  /usr/local/bin/python3
+  /usr/bin/python3
+)
+
+for PY in "${CANDIDATES[@]}"; do
+  [ -n "$PY" ] && [ -x "$PY" ] || continue
+  if "$PY" -c "import webview" >/dev/null 2>&1; then
+    exec "$PY" "$RES/app.py"
+  fi
+done
+
+PYENV_PY="$(pyenv which python3 2>/dev/null)"
+if [ -n "$PYENV_PY" ] && [ -x "$PYENV_PY" ]; then
+  MSG="pywebview isn't installed in your active pyenv Python.\n\nRun this in Terminal:\n\n$PYENV_PY -m pip install pywebview\n\nThen reopen Speed Curve."
+elif command -v python3 >/dev/null 2>&1; then
+  MSG="pywebview isn't installed for $(command -v python3).\n\nRun this in Terminal:\n\n$(command -v python3) -m pip install pywebview\n\nThen reopen Speed Curve."
+else
+  MSG="Speed Curve needs Python 3 + pywebview.\n\nInstall Python via pyenv or brew, then:\n\npip3 install pywebview\n\nAnd reopen Speed Curve."
+fi
+
+osascript -e "display dialog \"$MSG\" buttons {\"OK\"} default button 1 with title \"Speed Curve — Setup\"" >/dev/null 2>&1
+exit 1
