@@ -1,0 +1,67 @@
+name: build
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Dependencies
+        run: |
+          python3 -m pip install --upgrade pip
+          python3 -m pip install py2app pywebview
+
+      - name: Build .app Bundle
+        run: |
+          python3 setup.py py2app --dist-dir dist
+
+      - name: Package
+        run: |
+          cd dist
+          ditto -c -k --sequesterRsrc VinciRamp.app ../VinciRamp-macOS.zip
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: VinciRamp-macOS
+          path: VinciRamp-macOS.zip
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: VinciRamp-macOS
+
+      - name: Generate Tag
+        id: tag
+        run: |
+          TAG="build-$(date -u +%Y%m%d-%H%M%S)-${{ github.run_number }}"
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.tag.outputs.tag }}
+          name: Build ${{ github.run_number }}
+          body: |
+            Automated build from commit ${{ github.sha }}
+
+            ## Install
+            - Download `VinciRamp-macOS.zip`
+            - Unzip and move `VinciRamp.app` to your Applications folder
+            - Requires DaVinci Resolve Studio (for Fusion scripting)
+            - Install pywebview: `pip3 install pywebview`
+            - First launch may need right-click → Open in Finder
+          files: VinciRamp-macOS.zip
+          generate_release_notes: false

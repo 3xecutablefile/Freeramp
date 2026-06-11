@@ -2,7 +2,10 @@ import os
 import sys
 import traceback
 
-HERE = os.path.dirname(os.path.abspath(__file__))
+if getattr(sys, 'frozen', False):
+    HERE = os.path.join(os.path.dirname(sys.executable), '..', 'Resources')
+else:
+    HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 
 from apply_curve import (
