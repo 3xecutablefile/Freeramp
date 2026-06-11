@@ -25,8 +25,7 @@ jobs:
 
       - name: Package
         run: |
-          cd dist
-          ditto -c -k --sequesterRsrc VinciRamp.app ../VinciRamp-macOS.zip
+          cd dist && zip -r ../VinciRamp-macOS.zip VinciRamp.app
 
       - uses: actions/upload-artifact@v4
         with:

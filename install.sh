@@ -42,10 +42,19 @@ sudo -v
 ditto -x -k "$TMP/$NAME.zip" "$TMP/extracted"
 rm -f "$TMP/$NAME.zip"
 
-APP=$(find "$TMP/extracted" -maxdepth 2 -name "*.app" -type d | head -1)
-if [ -z "$APP" ]; then
+APP=$(find "$TMP/extracted" -maxdepth 3 -name "*.app" -type d | head -1)
+
+# Some zip tools strip the .app wrapper — reconstruct if needed
+if [ -z "$APP" ] && [ -d "$TMP/extracted/Contents" ]; then
+  echo "==> Reconstructing .app bundle wrapper …"
+  mkdir -p "$TMP/extracted/$NAME.app"
+  ditto "$TMP/extracted/Contents" "$TMP/extracted/$NAME.app/Contents"
+  APP="$TMP/extracted/$NAME.app"
+fi
+
+if [ -z "$APP" ] || [ ! -d "$APP" ]; then
   echo "ERROR: Could not find .app inside the archive."
-  ls -R "$TMP/extracted"
+  ls -R "$TMP/extracted" 2>/dev/null | head -40
   exit 1
 fi
 
