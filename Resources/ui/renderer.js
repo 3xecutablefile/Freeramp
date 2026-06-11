@@ -1,7 +1,35 @@
 (function () {
   'use strict'
 
-  const api = window.pywebview ? window.pywebview.api : window
+  let _api = null
+  let _ready = false
+  const _queue = []
+
+  function getApi() {
+    if (_api) return Promise.resolve(_api)
+    if (_ready) {
+      _api = window.pywebview && window.pywebview.api ? window.pywebview.api : null
+      if (_api) return Promise.resolve(_api)
+    }
+    return new Promise(function (resolve) {
+      _queue.push(resolve)
+    })
+  }
+
+  function onPywebviewReady() {
+    _ready = true
+    _api = window.pywebview && window.pywebview.api ? window.pywebview.api : null
+    if (_api) {
+      _queue.forEach(function (fn) { fn(_api) })
+      _queue.length = 0
+    }
+  }
+
+  if (window.pywebview && window.pywebview.api) {
+    onPywebviewReady()
+  } else {
+    window.addEventListener('pywebviewready', onPywebviewReady)
+  }
 
   /* ── state ── */
   const S = {
@@ -125,7 +153,8 @@
   async function refresh() {
     setStatus('Syncing…')
     try {
-      const r = await api.list_timeline()
+      const a = await getApi()
+      const r = await a.list_timeline()
       if (!r.ok) { setStatus(r.msg, 'error'); toast(r.msg, 'error'); return }
       S.timeline = r
       S.uid = null
@@ -214,7 +243,8 @@
 
     setStatus('Loading curve…')
     try {
-      const loaded = await api.get_curve(uid)
+      const a = await getApi()
+      const loaded = await a.get_curve(uid)
       if (loaded.ok && loaded.points) {
         try {
           const p = JSON.parse(loaded.points)
@@ -665,10 +695,11 @@
 
   async function doApply() {
     if (!S.uid || !S.samples || S.samples.length < 2) return
+    const a = await getApi()
     const samples = S.samples.slice()
     const pointsJson = JSON.stringify({ samples, version: 2, pointCount: S.samples.length })
     try {
-      const r = await api.apply(S.uid, samples, pointsJson)
+      const r = await a.apply(S.uid, samples, pointsJson)
       if (r.ok) {
         markClipApplied(S.uid)
       }
@@ -678,11 +709,12 @@
   async function applyRamp() {
     if (!S.uid) { setStatus('Select a clip first', 'error'); toast('No clip selected', 'error'); return }
     if (!S.samples || S.samples.length < 2) { setStatus('Not enough points', 'error'); return }
+    const a = await getApi()
     const samples = S.samples.slice()
     const pointsJson = JSON.stringify({ samples, version: 2, pointCount: S.samples.length })
     setStatus('Applying…')
     try {
-      const r = await api.apply(S.uid, samples, pointsJson)
+      const r = await a.apply(S.uid, samples, pointsJson)
       if (r.ok) {
         setStatus(r.msg, 'success')
         toast('Applied ✓', 'success')
