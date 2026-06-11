@@ -54,6 +54,9 @@ fi
 
 ditto "$APP" "/Applications/$NAME.app"
 
+echo "==> Removing quarantine attributes …"
+xattr -dr com.apple.quarantine "/Applications/$NAME.app" 2>/dev/null || true
+
 echo ""
 echo "✓ $NAME $TAG installed to /Applications/$NAME.app"
 echo ""
@@ -61,5 +64,5 @@ echo "Next steps:"
 echo "  1. Make sure DaVinci Resolve Studio is running"
 echo "  2. Install pywebview if you haven't already:"
 echo "       pip3 install pywebview"
-echo "  3. Launch from Applications or via Spotlight"
+echo "  3. Launch from Applications or via Spotlight (quarantine already removed)"
 echo ""

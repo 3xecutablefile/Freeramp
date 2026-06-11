@@ -62,6 +62,6 @@ jobs:
             - Unzip and move `VinciRamp.app` to your Applications folder
             - Requires DaVinci Resolve Studio (for Fusion scripting)
             - Install pywebview: `pip3 install pywebview`
-            - First launch may need right-click → Open in Finder
+            - Run install.sh to auto-remove quarantine, or right-click → Open for the first manual launch
           files: VinciRamp-macOS.zip
           generate_release_notes: false
