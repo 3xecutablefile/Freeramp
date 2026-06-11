@@ -36,6 +36,8 @@ trap "rm -rf '$TMP'" EXIT
 curl -sfL "$URL" -o "$TMP/$NAME.zip"
 
 echo "==> Installing to /Applications …"
+echo "==> Administrator access needed to install to /Applications …"
+sudo -v
 
 ditto -x -k "$TMP/$NAME.zip" "$TMP/extracted"
 rm -f "$TMP/$NAME.zip"
@@ -47,15 +49,11 @@ if [ -z "$APP" ]; then
   exit 1
 fi
 
-if [ -d "/Applications/$NAME.app" ]; then
-  echo "==> Removing old version …"
-  rm -rf "/Applications/$NAME.app"
-fi
-
-ditto "$APP" "/Applications/$NAME.app"
+sudo rm -rf "/Applications/$NAME.app" 2>/dev/null || true
+sudo ditto "$APP" "/Applications/$NAME.app"
 
 echo "==> Removing quarantine attributes …"
-xattr -dr com.apple.quarantine "/Applications/$NAME.app" 2>/dev/null || true
+sudo xattr -dr com.apple.quarantine "/Applications/$NAME.app"
 
 echo ""
 echo "✓ $NAME $TAG installed to /Applications/$NAME.app"
