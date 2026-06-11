@@ -36,8 +36,9 @@
     timeline: null,
     uid: null,
     samples: [],
-    back: [],        // undo stack
-    forward: [],     // redo stack
+    previews: {},    // uid -> samples[] for timeline mini-previews
+    back: [],
+    forward: [],
     dragging: null,
     ptHover: null,
     live: false,
@@ -143,6 +144,117 @@
     el.redoBtn.disabled = !S.forward.length
   }
 
+  /* ── clip mini-previews in timeline ── */
+  function drawClipPreview(canvas, samples) {
+    if (!canvas || !canvas.getContext) return
+    const ctx = canvas.getContext('2d')
+    const w = canvas.width, h = canvas.height
+    ctx.clearRect(0, 0, w, h)
+
+    const n = samples && samples.length
+    if (!n || n < 2) {
+      ctx.fillStyle = '#2a2a33'
+      ctx.fillRect(0, 0, w, h)
+      ctx.fillStyle = '#555'
+      ctx.font = '7px sans-serif'
+      ctx.textAlign = 'center'
+      ctx.fillText('―', w / 2, h / 2 + 2)
+      return
+    }
+
+    const pad = 1
+    const pw = w - pad * 2, ph = h - pad * 2
+
+    // bg
+    ctx.fillStyle = '#1a1a20'
+    ctx.fillRect(0, 0, w, h)
+
+    // midline (100%)
+    const midY = pad + ph * 0.5
+    ctx.strokeStyle = '#2a2a33'
+    ctx.lineWidth = 0.5
+    ctx.beginPath()
+    ctx.moveTo(pad, midY)
+    ctx.lineTo(w - pad, midY)
+    ctx.stroke()
+
+    // sample max for scaling
+    const max = Math.max(1, Math.max(...samples))
+    const pts = []
+    for (let i = 0; i < n; i++) {
+      const x = pad + (pw * i / (n - 1))
+      const y = pad + ph * (1 - Math.min(samples[i], max) / max)
+      pts.push({ x, y })
+    }
+
+    // fill
+    ctx.beginPath()
+    ctx.moveTo(pts[0].x, pad + ph)
+    for (const p of pts) ctx.lineTo(p.x, p.y)
+    ctx.lineTo(pts[n - 1].x, pad + ph)
+    ctx.closePath()
+    ctx.fillStyle = 'rgba(200,164,92,0.15)'
+    ctx.fill()
+
+    // line
+    ctx.beginPath()
+    ctx.moveTo(pts[0].x, pts[0].y)
+    for (let i = 0; i < n - 1; i++) {
+      const a = pts[i], b = pts[i + 1]
+      ctx.bezierCurveTo(
+        a.x + (b.x - a.x) * 0.35, a.y,
+        b.x - (b.x - a.x) * 0.35, b.y,
+        b.x, b.y
+      )
+    }
+    ctx.strokeStyle = '#c8a45c'
+    ctx.lineWidth = 1.2
+    ctx.stroke()
+  }
+
+  function drawAllPreviews() {
+    S.timeline.tracks.forEach(function (track) {
+      track.items.forEach(function (item) {
+        var canvas = el.timelineBody.querySelector('.clip-preview[data-uid="' + item.id + '"]')
+        var samples = S.previews[item.id]
+        drawClipPreview(canvas, samples)
+      })
+    })
+  }
+
+  function updatePreview(uid) {
+    S.previews[uid] = S.samples.slice()
+    var canvas = el.timelineBody.querySelector('.clip-preview[data-uid="' + uid + '"]')
+    drawClipPreview(canvas, S.samples)
+  }
+
+  async function loadAllPreviews() {
+    var allItems = []
+    S.timeline.tracks.forEach(function (track) {
+      track.items.forEach(function (item) { allItems.push(item) })
+    })
+    // load in batches of 5 to avoid hammering the bridge
+    for (var i = 0; i < allItems.length; i += 5) {
+      var batch = allItems.slice(i, i + 5)
+      await Promise.all(batch.map(loadOnePreview))
+    }
+  }
+
+  async function loadOnePreview(item) {
+    try {
+      var a = await getApi()
+      var loaded = await a.get_curve(item.id)
+      if (loaded.ok && loaded.points) {
+        var p = JSON.parse(loaded.points)
+        if (p && p.samples && p.samples.length >= 2) {
+          S.previews[item.id] = p.samples
+          var canvas = el.timelineBody.querySelector('.clip-preview[data-uid="' + item.id + '"]')
+          drawClipPreview(canvas, p.samples)
+        }
+      }
+    } catch (_) {}
+  }
+
   function clearUndo() {
     S.back = []
     S.forward = []
@@ -159,8 +271,15 @@
       S.timeline = r
       S.uid = null
       S.samples = []
+      S.previews = {}
+      for (const track of r.tracks) {
+        for (const item of track.items) {
+          S.previews[item.id] = [100, 100, 100, 100, 100]
+        }
+      }
       renderTimeline()
       selectClip(null)
+      loadAllPreviews()
       setStatus('Synced — ' + r.name, 'success')
       toast('Loaded ' + r.name, 'success')
       setLive(true)
@@ -191,6 +310,7 @@
         totalClips++
         const sel = item.id === S.uid ? ' selected' : ''
         html += '<div class="clip' + sel + '" data-uid="' + item.id + '">' +
+          '<canvas class="clip-preview" data-uid="' + item.id + '" width="44" height="14"></canvas>' +
           '<span class="clip-name">' + esc(item.name) + '</span>' +
           '<span class="clip-frames">' + item.start + '–' + item.end + '</span>' +
           '<span class="clip-apply-tick" data-uid="' + item.id + '">●</span>' +
@@ -204,9 +324,11 @@
     el.timelineBody.querySelectorAll('.clip').forEach((el_) => {
       el_.addEventListener('click', () => selectClip(el_.dataset.uid))
     })
+    drawAllPreviews()
   }
 
   function markClipApplied(uid) {
+    updatePreview(uid)
     const tick = el.timelineBody.querySelector('.clip-apply-tick[data-uid="' + uid + '"]')
     if (tick) {
       tick.classList.add('show')
@@ -482,6 +604,9 @@
 
     // ── stats ──
     updateStats(samples)
+
+    // ── timeline preview ──
+    if (S.uid) updatePreview(S.uid)
   }
 
   /* ── stats ── */

@@ -82,9 +82,12 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--f
 .clip:active{transform:scale(0.98)}
 .clip.selected{background:linear-gradient(90deg,rgba(200,164,92,0.08),transparent);border-left-color:var(--gold)}
 .clip.selected .clip-name{color:var(--text-bright)}
-.clip-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}
+.clip-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0}
 .clip-frames{font-family:var(--font-mono);font-size:9px;color:var(--text-dim);opacity:0.6;flex-shrink:0;letter-spacing:-0.3px}
-.clip-apply-tick{font-size:9px;opacity:0;transition:opacity .3s;color:var(--green);margin-left:auto}
+.clip-preview{flex-shrink:0;width:44px;height:14px;border-radius:3px;opacity:0.5;transition:opacity .2s}
+.clip:hover .clip-preview{opacity:0.8}
+.clip.selected .clip-preview{opacity:1}
+.clip-apply-tick{font-size:9px;opacity:0;transition:opacity .3s;color:var(--green);margin-left:auto;flex-shrink:0}
 .clip-apply-tick.show{opacity:1}
 
 /* ─── curve editor ─── */
